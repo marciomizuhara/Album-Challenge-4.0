@@ -25,6 +25,7 @@ from urllib.request import urlopen as uReq
 from urllib.request import Request
 from functions.album_id import *
 from functions.discogs import *
+from functions.genres import *
 from functions.topalbums import *
 from functions.status import *
 from functions.ratings import *
@@ -93,37 +94,6 @@ def filtered_roll(user, filter_list, operator, genre):
     return album
 
 
-def top_genres():
-    genre_sorting = {}
-    metal_counter = 0
-    rock_counter = 0
-    indie_counter = 0
-    hip_hop_counter = 0
-    electronic_counter = 0
-    for album in db['2022']:
-        if type(album) is not str:
-            if 'metal' in album['genre']:
-                metal_counter += 1
-            elif 'indie' in album['genre']:
-                indie_counter += 1
-            elif 'electronic' in album['genre']:
-                electronic_counter += 1
-            elif 'hip hop' in album['genre']:
-                hip_hop_counter += 1
-            elif 'rock' in album['genre']:
-                rock_counter += 1
-    genre_sorting['metal'] = metal_counter
-    genre_sorting['rock'] = rock_counter
-    genre_sorting['indie'] = indie_counter
-    genre_sorting['hip_hop'] = hip_hop_counter
-    genre_sorting['electronic'] = electronic_counter    
-    sorted_genres = [
-        v for v in sorted(
-            genre_sorting.items(), key=lambda item: item[1], reverse=True)
-    ]
-    return sorted_genres
-
-
 @client.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(client))
@@ -142,6 +112,8 @@ async def on_message(message):
 
     if message.content.startswith('!run'):
         pass
+        
+
         
     if message.content.startswith('!dburl'):        
         await message.channel.send(os.getenv("REPLIT_DB_URL"))
@@ -494,16 +466,15 @@ async def on_message(message):
         user = str(message.author).split(' ', 1)[-1]
         total = len(db[(str(message.author))])
         list_2022 = []
-        list_2023 = []
-        
+        list_2023 = []                 
         embedVar = discord.Embed(
-            title=f'```🟣  **{user}**  🟣```',
+            title=f'🟣  **{user}**  🟣',
             color=0x8000FF)
         embedVar.add_field(name='**Total de álbuns adicionados**',
                            value=total,
                            inline=False)
-        embedVar.set_thumbnail(          
-          url=str(message.author.avatar_url)
+        embedVar.set_thumbnail(                    
+          url=str(message.author.avatar)
         )
       
         if total == 0:
@@ -542,38 +513,39 @@ async def on_message(message):
             value= db['points'][user],
             inline=True)
       
-            try:
-                embedVar.add_field(
-            name='**Último álbum adicionado**',
-            value= f'{db[user][-1]["artist"]} - {db[user][-1]["album"]} ({db[user][-1]["year"]}) - id: {db[user][-1]["id"]}',
-            inline=False)
-            except:
-              pass
+            # try:
+            id = db[user][-1]["id"]
+            lista = list_helper(id)
+            album_id = id_helper(id)
+            embedVar.add_field(
+              name='** ✅ Último álbum adicionado ✅**',
+              value= f'[{db[lista][album_id]["artist"]} - {db[lista][album_id]["album"]}]({db[lista][album_id]["spotify"]}) - id: {db[lista][album_id]["id"]}',
+              inline=False)
+            # except:
+            #   pass
             try:
                embedVar.add_field(
-            name='**Álbum rolado**',
-            value= f'{db[str(message.author) + "_temp_list"]["id"]}. {db[str(message.author) + "_temp_list"]["artist"]} - {db[str(message.author) + "_temp_list"]["album"]}',
+            name='**🎲 Álbum rolado 🎲**',
+            value= f'[{db[str(message.author) + "_temp_list"]["id"]}. {db[str(message.author) + "_temp_list"]["artist"]} - {db[str(message.author) + "_temp_list"]["album"]}]({db[str(message.author) + "_temp_list"]["spotify"]}) - id: {db[str(message.author) + "_temp_list"]["id"]}',
             inline=False)
             except:
               embedVar.add_field(
-            name='**Álbum rolado**',
+            name='**🎲 Álbum rolado 🎲**',
             value= f'Nenhum álbum rolado para ouvir',
-            inline=False) 
-            embedVar.add_field(
-              name='\u200b',
-              value= '**Não tira esse álbum do play**  <:pepedelighted:864125309309943848>',
-              inline=False
-            )             
+            inline=False)                          
             
-            if len(db['obsession'][user]) > 2:              
-              embedVar.set_image(
-                url = db['obsession'][user]
-                )
-            else:              
-              pass
+            if len(db['obsession'][user]) > 2:
+              album = f'[{db["obsession"][user]["artist"]} - {db["obsession"][user]["album"]}]({db["obsession"][user]["spotify"]}) - id: {db["obsession"][user]["id"]}'
+            else:
+              album = '\u200b'
+            embedVar.add_field(
+            name='**🔁 No repeat 🔁**',
+            value= album,
+            inline=False
+          )         
 
             embedVar.set_footer(
-              text= 'Para adicionar ou substituir sua cover, digite **!setobsession ID**'
+              text= 'Para adicionar ou substituir seu "No repeat", digite **!setrepeat ID**'
             )            
               
         await message.channel.send(embed=embedVar)
@@ -581,7 +553,7 @@ async def on_message(message):
 #######################################################################################
               
 
-    if message.content.startswith('!top'):
+    if message.content.startswith('!top') and str(message.content) != '!topgenres':
         number = 7
         year = ''
         if len(message.content) > 4:
@@ -930,8 +902,10 @@ async def on_message(message):
                 f'**{str(message.author)}**, você não tem pontos suficientes para esta operação. Total de pontos: **{db["points"][str(message.author)]}**\nPara ganhar pontos, participe do desafio do #album-challenge '
             )
 
-    if message.content.startswith('!teste'):        
-        await message.channel.send(f'bot funcionando normalmente.')
+    if message.content.startswith('!teste'):                
+        user_id = str(message.author.id)        
+        user = 'discordapp.com/users/' + user_id
+        await message.channel.send(f'bot funcionando normalmente.\n{user}')
 
     if message.content.startswith('!listgenres'):
         genres = list(
@@ -1083,12 +1057,40 @@ async def on_message(message):
 
 #############################################################################
           
-    if message.content.startswith('!setobsession'):
+    if message.content.startswith('!setrepeat'):
         id = int(message.content.split(' ', 1)[-1])
         lista = str(list_helper(id))
         album_id = id_helper(id)
-        db['obsession'][str(message.author)] = db[lista][album_id]['cover']
-        await message.channel.send(f'Cover do status atualizada!')
+        db['obsession'][str(message.author)] = db[lista][album_id]
+        await message.channel.send(f'No repeat atualizado!')
+
+#############################################################################
+          
+    if message.content.startswith('!topgenres'):        
+        total, genres, cover = top_genres()
+        embedVar = discord.Embed(title=f'Gêneros mais adicionados', color=0x0093FF)  
+        embedVar.set_thumbnail(
+          url = cover
+        )
+        text = ''
+        counter = 0        
+        for item in genres:            
+            text += f'🎵\u200b \u200b{item[0]}:\u200b \u200b **{item[1]}**\n'
+            counter += 1
+            if counter == 20:
+              break          
+        # text += '\n\u200b'        
+        embedVar.add_field(
+        name='\u200b',
+        value= text
+          )
+        embedVar.add_field(
+        name='Quantidade de tipos de gêneros adicionados',
+        value= f'{total} gêneros diferentes',
+        inline= False
+          )
+        
+        await message.channel.send(embed=embedVar)
 
 #############################################################################
     if message.content.startswith('!wordcloud'):

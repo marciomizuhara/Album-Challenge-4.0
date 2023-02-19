@@ -13,6 +13,8 @@ wordcloud = "^1.8.2"
 bs4 = "^0.0.1"
 discogs = "^0.2"
 discogs-client = "^2.3.0"
+Flask = "^2.2.3"
+replit = "^3.2.5"
 
 [tool.poetry.dev-dependencies]
 
