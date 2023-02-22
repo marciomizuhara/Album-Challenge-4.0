@@ -464,22 +464,28 @@ async def on_message(message):
 #######################################################################################
     if message.content.startswith('!mystatus'):
         user = str(message.author).split(' ', 1)[-1]
+        user_id = get_user_id(user, message.author.id)
         total = len(db[(str(message.author))])
         list_2022 = []
-        list_2023 = []                 
+        list_2023 = []                                 
         embedVar = discord.Embed(
-            title=f'🟣  **{user}**  🟣',
-            color=0x8000FF)
-        embedVar.add_field(name='**Total de álbuns adicionados**',
+            title= f'{user}',
+            color=0x8000FF,
+            #url=user_id
+            url = str(message.author.avatar),
+          
+        )        
+      
+        embedVar.add_field(name='Total de álbuns adicionados',
                            value=total,
                            inline=False)
-        embedVar.set_thumbnail(                    
+        embedVar.set_thumbnail(                              
           url=str(message.author.avatar)
         )
       
         if total == 0:
             embedVar.add_field(
-            name='**Você ainda não tem nenhum álbum adicionado**',
+            name='Você ainda não tem nenhum álbum adicionado',
             value= '#',
             inline=True)
         else:          
@@ -489,48 +495,59 @@ async def on_message(message):
                                                   str(message.author))
             try:
                 embedVar.add_field(
-            name='**Álbuns de 2022**',
+            name='Álbuns de 2022',
             value= f'{len(list_2022)} - ({percentage_2022}%)',
             inline=True)
             except:
               pass
             try:
                 embedVar.add_field(
-            name='**Álbuns de 2023**',
+            name='Álbuns de 2023',
             value= f'{len(list_2023)} - ({percentage_2023}%)',
             inline=True)
             except:
               pass            
 
-            average = user_average_rating(user)
             embedVar.add_field(
-            name='**Nota média**',
+            name='Pontos',
+            value= db['points'][user],
+            inline=True)
+
+            top, average, min = user_average_rating(user)            
+            
+            embedVar.add_field(
+            name='Maior nota',
+            value= top,
+            inline=True)
+
+            embedVar.add_field(
+            name='Nota média',
             value= average,
             inline=True)
 
             embedVar.add_field(
-            name='**Pontos**',
-            value= db['points'][user],
+            name='Menor nota',
+            value= min,
             inline=True)
-      
+
             # try:
             id = db[user][-1]["id"]
             lista = list_helper(id)
             album_id = id_helper(id)
             embedVar.add_field(
-              name='** ✅ Último álbum adicionado ✅**',
+              name=' ✅ Último álbum ouvido',
               value= f'[{db[lista][album_id]["artist"]} - {db[lista][album_id]["album"]}]({db[lista][album_id]["spotify"]}) - id: {db[lista][album_id]["id"]}',
               inline=False)
             # except:
             #   pass
             try:
                embedVar.add_field(
-            name='**🎲 Álbum rolado 🎲**',
+            name='*🎲 Álbum rolado',
             value= f'[{db[str(message.author) + "_temp_list"]["id"]}. {db[str(message.author) + "_temp_list"]["artist"]} - {db[str(message.author) + "_temp_list"]["album"]}]({db[str(message.author) + "_temp_list"]["spotify"]}) - id: {db[str(message.author) + "_temp_list"]["id"]}',
             inline=False)
             except:
               embedVar.add_field(
-            name='**🎲 Álbum rolado 🎲**',
+            name='🎲 Álbum rolado',
             value= f'Nenhum álbum rolado para ouvir',
             inline=False)                          
             
@@ -539,7 +556,7 @@ async def on_message(message):
             else:
               album = '\u200b'
             embedVar.add_field(
-            name='**🔁 No repeat 🔁**',
+            name='🔁 No repeat',
             value= album,
             inline=False
           )         
@@ -739,11 +756,11 @@ async def on_message(message):
         counter = 1
         year = '2023'
         index = len(db[year]) - counter
-        title = f'```🔵  Últimos 10 álbuns adicionados à lista de {year}  ```🔵'
+        title = f'```🔵  Últimos 7 álbuns adicionados à lista de {year}  ```🔵'
         embedVar = discord.Embed(title=f'{title}', color=0x0093FF)
         text = ''
-        for album in range(10):
-            text += f'{db[year][index]["id"]}. **{db[year][index]["artist"]} - {db[year][index]["album"]}**, em {db[year][index]["added_on_day"]}\n'
+        for album in range(7):
+            text += f'{db[year][index]["id"]}. [{db[year][index]["artist"]} - {db[year][index]["album"]}]({db[year][index]["spotify"]}), em {db[year][index]["added_on_day"]}\n'
             index -= 1
           
           
@@ -902,10 +919,8 @@ async def on_message(message):
                 f'**{str(message.author)}**, você não tem pontos suficientes para esta operação. Total de pontos: **{db["points"][str(message.author)]}**\nPara ganhar pontos, participe do desafio do #album-challenge '
             )
 
-    if message.content.startswith('!teste'):                
-        user_id = str(message.author.id)        
-        user = 'discordapp.com/users/' + user_id
-        await message.channel.send(f'bot funcionando normalmente.\n{user}')
+    if message.content.startswith('!teste'):        
+        await message.channel.send(f'bot funcionando normalmente.')
 
     if message.content.startswith('!listgenres'):
         genres = list(

@@ -1,3 +1,4 @@
+import discord
 from replit import db
 from functions.helpers import *
 
@@ -45,6 +46,13 @@ def user_average_rating(user):
       notas.append(album['rating'][user])
     except:
       continue
-  return round(sum(notas)/len(notas), 2)
+  return max(notas), round(sum(notas)/len(notas), 2), min(notas)
+
+
+def get_user_id(username, message_author_id):
+  user_id = str(message_author_id)        
+  user = 'discordapp.com/users/' + user_id
+  print(user)
+  return user
 
 
