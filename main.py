@@ -156,8 +156,8 @@ async def on_message(message):
     if message.content.startswith('!genre'):
         genre = message.content.split(' ', 1)[-1].lower()
         if genre.lower() == 'missing':            
-            result = [v for v in db['2022'] if not v['genre'].lower()]
-            year_2023 = [v for v in db['2023'] if not v['genre'].lower()]
+            result = [v for v in db['2022'] if len(v['genre']) < 2]
+            year_2023 = [v for v in db['2023'] if len(v['genre']) < 2]
             result.extend(year_2023)            
             if len(result) > 0:
                 await message.channel.send(
@@ -166,7 +166,7 @@ async def on_message(message):
                     await message.channel.send(
                         f'**{album["id"]}**. {album["artist"]} - {album["album"]}\n'
                     )                  
-            
+            else:
                 await message.channel.send(
                     f'Todos os álbuns já foram taggeados.')
         else:
@@ -551,10 +551,13 @@ async def on_message(message):
             value= f'Nenhum álbum rolado para ouvir',
             inline=False)                          
             
-            if len(db['obsession'][user]) > 2:
-              album = f'[{db["obsession"][user]["artist"]} - {db["obsession"][user]["album"]}]({db["obsession"][user]["spotify"]}) - id: {db["obsession"][user]["id"]}'
-            else:
-              album = '\u200b'
+            try:
+              if len(db['obsession'][user]) > 2:
+                album = f'[{db["obsession"][user]["artist"]} - {db["obsession"][user]["album"]}]({db["obsession"][user]["spotify"]}) - id: {db["obsession"][user]["id"]}'
+              else:
+                album = '\u200b'
+            except:
+              album = '\u200b'                
             embedVar.add_field(
             name='🔁 No repeat',
             value= album,
@@ -565,63 +568,6 @@ async def on_message(message):
               text= 'Para adicionar ou substituir seu "No repeat", digite **!setrepeat ID**'
             )            
               
-        await message.channel.send(embed=embedVar)
-
-#######################################################################################
-              
-
-    if message.content.startswith('!top') and str(message.content) != '!topgenres':
-        number = 7
-        year = ''
-        if len(message.content) > 4:
-            try:
-                year = str(message.content.split(' ')[1])
-                print(year)
-                number = int(message.content.split(' ')[-1])
-                if number > 7:
-                  number == 7                
-            except:
-                pass
-        
-        sorted_list = top_albums(year)        
-        counter = 1
-        embedVar = discord.Embed(title=f'Lançamentos de {year} melhor avaliados', color=0x0093FF)
-        text = ''
-        if number != 0:
-            for item in sorted_list:                                
-                album = item["artist"] + ' - ' + item["album"]
-                if len(album) > 36:
-                  album = album[0:36] + '...'                
-                if counter == 1:
-                  counter = '👑'                  
-                  text += f'**{counter}.** **[{album}]({item["spotify"]})** - nota: **{item["rating"]}**\n'
-                  counter = 1
-                  counter += 1                  
-                else:
-                  try:
-                    text += f'**{counter}.** **[{album}]({item["spotify"]})** - nota: **{item["rating"]}**\n'                    
-                  except:
-                    print(item["id"])
-                  counter += 1                    
-                if counter > number:
-                    break                
-        else:
-            text += f'{counter}. {item["artist"]} - {item["album"]} - nota: **{item["rating"]}**\n'
-            counter += 1
-        embedVar.set_thumbnail(
-          url = sorted_list[0]['cover']
-        )
-        try:
-          embedVar.add_field(
-          name='\u200b',
-          value= text
-            )
-        except:
-            pass
-        
-        embedVar.set_footer(
-          text = 'Apenas álbuns com mais de uma nota recebida são contabilizados nessa lista\nAinda não ouviu algum desses álbuns e está curioso? Basta acessá-lo pelo ID e depois atualizar sua lista com **!update ID**, **!review ID** e **!rating ID**'
-        )
         await message.channel.send(embed=embedVar)
 
 #######################################################################################
@@ -951,38 +897,40 @@ async def on_message(message):
                 f'**{album["id"]}**. {album["artist"]} - {album["album"]} - *{album["year"]}*'
             )
         await message.channel.send(divider)
-
-    if message.content.startswith('!list '):
-        if len(message.content.split(' ')) < 3:
-            year = '2023'
-            letter = message.content.split(' ')[-1][0]
+#########################################################################
+    
+    if message.content.startswith('!search'):
+        text = str(message.content).split(' ')[-1].lower()        
+        list_2022 = [[v['id'], v['artist'].lower(), v['album'].lower()] for v in db['2022']]
+        list_2023 = [[v['id'], v['artist'].lower(), v['album'].lower()] for v in db['2023']]
+        joined_list = list_2022 + list_2023                                
+        
+        result_list = []
+        for item in joined_list:
+          x = ','.join(str(v) for v in item)          
+          if text in x:                      
+            result_list.append(item)       
+        
+        title = f'Resultados com a palavra **{text}**'
+        embedVar = discord.Embed(title=title,          
+          color=0x0093FF)
+        embed_text = ''
+        if len(result_list) != 0:
+            for album in result_list:
+              embed_text += f'id: **{album[0]}** - {album[1].title()} - {album[2].title()}\n'            
+            embedVar.add_field(
+              name='\u200b',
+              value= embed_text
+            )
+            embedVar.set_footer(text='\nPara acessar qualquer álbum, basta buscar pelo id digitando !id ID')
         else:
-            year = message.content.split(' ')[1]
-            letter = message.content.split(' ')[2][0]
-        new_entries = [[v for v in d.values()] for d in db[year]]
-        new_entries2 = []
-        for item in new_entries:
-            new_entries2.append(f'{item[0]} - {item[1]} (id: **{item[3]}**)')
-        await message.channel.send(
-            f'Álbuns de artistas que começam com a letra **{letter.upper()}** já adicionados à lista de lançamentos de {year}:\n'
-        )
-        number = 0
-        for album in new_entries2:
-            if album[0].lower() == letter.lower():
-                await message.channel.send(album)
-                number += 1
-        await message.channel.send(f'{divider}')
-        if number == 0:
-            await message.channel.send(
-                f'Nenhum artista com a letra **{letter.upper()}**')
-        elif number == 1:
-            await message.channel.send(
-                f'- **{number}** artista com a letra **{letter.upper()}**')
-        else:
-            await message.channel.send(
-                f'- **{number}** artistas com a letra **{letter.upper()}**')
-
-        #############################################################################
+            embedVar.add_field(
+            name='\u200b',
+            value= f'Nenhuma ocorrência com a palavra **{text}**'
+            )
+        
+        await message.channel.send(embed=embedVar)        
+              #############################################################################
 
     if message.content.startswith('!id '):
         id = int(message.content.split(' ')[-1])
@@ -1108,6 +1056,31 @@ async def on_message(message):
         await message.channel.send(embed=embedVar)
 
 #############################################################################
+    
+    if message.content.startswith('!top') and str(message.content) != '!topgenres':
+        number = 7
+        year = 'alltime'
+        if len(message.content) > 4:
+            try:
+                year = str(message.content.split(' ')[1])                
+                if len(message.content) > 11:
+                  number = int(message.content.split(' ')[-1])
+                  if number > 7:
+                    print('aqui 2')
+                    number == 7                
+            except:
+                print('aqui 3')
+                pass        
+        sorted_list = top_albums(year)        
+        embedVar, embedVar2 = embed_top_albums(number, year, sorted_list)            
+        embedVar2.set_footer(
+          text = 'Apenas álbuns com mais de uma nota recebida são contabilizados nessa lista\nAinda não ouviu algum desses álbuns e está curioso? Basta acessá-lo pelo ID e depois atualizar sua lista com **!update ID**, **!review ID** e **!rating ID**'
+          )
+        await message.channel.send(embed=embedVar)
+        await message.channel.send(embed=embedVar2)
+    
+      
+#############################################################################
     if message.content.startswith('!wordcloud'):
         id = int(message.content.split(' ', 2)[-1])
         lista = str(list_helper(id))
@@ -1119,9 +1092,10 @@ async def on_message(message):
             text.append(user_review)
         text = ' '.join(text)
         new_text = text.replace('"', "'")
-        wordcloud = word_cloud(new_text)
-        url = wordcloud.show()
-        await message.channel.send(url)
+        wordcloud = word_cloud(new_text)        
+        embedVar = discord.Embed(color=0x0093FF)
+        embedVar.set_image(url=wordcloud) # .show()
+        await message.channel.send(embed=embedVar)
 
 my_secret = os.environ['TOKEN']
 

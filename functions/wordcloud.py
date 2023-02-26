@@ -1,13 +1,13 @@
 from wordcloud import WordCloud
 from PIL import Image
 import io
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 
 def word_cloud(text):
   common_words = ['a','o','as', 'os', 'um','uma','é','e','são','uns','umas',
-                  'ele','ela','eles','elas','dos','das','do','da','com',
-                'esse','essa','que','mais','mas','de','em','por']
+                  'ele','ela','eles','elas','dos','das','do','da','com','como'
+                'esse','essa','que','mais','mas','de','em','por','para']
 
   filtered_text = [x for x in text.split(' ') if x.lower() not in common_words]
   new_text = ' '.join(filtered_text)

@@ -10,5 +10,8 @@ def get_album_cover(album):
     user_token= discogs_secret
   )
   results = d.search(album)
-  cover = results.page(1)[0].data['cover_image']
+  try:
+    cover = results.page(1)[0].data['cover_image']
+  except:
+    cover = '#'
   return cover
