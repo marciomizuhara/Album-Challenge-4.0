@@ -4,7 +4,7 @@ from functions.helpers import *
 
 
 def check_user(user):
-  if not db[user]:    
+  if user not in db.keys():  
     db[user] = []
     db['points'][user] = 1    
   else:

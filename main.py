@@ -542,7 +542,7 @@ async def on_message(message):
             #   pass
             try:
                embedVar.add_field(
-            name='*🎲 Álbum rolado',
+            name='🎲 Álbum rolado',
             value= f'[{db[str(message.author) + "_temp_list"]["id"]}. {db[str(message.author) + "_temp_list"]["artist"]} - {db[str(message.author) + "_temp_list"]["album"]}]({db[str(message.author) + "_temp_list"]["spotify"]}) - id: {db[str(message.author) + "_temp_list"]["id"]}',
             inline=False)
             except:
