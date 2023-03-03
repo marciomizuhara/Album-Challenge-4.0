@@ -15,6 +15,10 @@ def add_points(user):
     db['points'][user] += 1 
 
 
+def remove_points(user):
+    db['points'][user] -= 1
+
+
 def update_album(user, album):
   del album['spotify']
   del album['reviews']

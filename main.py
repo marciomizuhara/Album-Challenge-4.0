@@ -26,6 +26,7 @@ from urllib.request import Request
 from functions.album_id import *
 from functions.discogs import *
 from functions.genres import *
+from functions.new_releases import *
 from functions.topalbums import *
 from functions.status import *
 from functions.ratings import *
@@ -34,6 +35,7 @@ from functions.rym import *
 from functions.helpers import *
 from functions.user import *
 from functions.wordcloud import *
+
 
 # db.db_url = os.environ['DB']
 REPLIT_DB_URL = os.getenv("DB")
@@ -63,10 +65,6 @@ def filtered_roll_random(add_filter):
     roll = random.randint(0, len(add_filter) - 1)
     album = add_filter[roll]    
     return album
-
-
-def remove_points(user):
-    db['points'][user] -= 1
 
 
 def customized_top(number):
@@ -630,36 +628,11 @@ async def on_message(message):
           year = str(message.content.split(' ')[-1])
         else:
           year = 'alltime'
-        sorted_list = myratings(str(message.author), year)        
-        counter = 1                
-        embedVar = discord.Embed(title=f'Melhores avaliados por {user} ({year})', color=0x0093FF)
-        text = ''        
-        embedVar.set_thumbnail(
-              url = sorted_list[0]['cover']
-            )
-        for item in sorted_list:
-            album = item["artist"] + ' - ' + item["album"]
-            if len(album) > 36:
-              album = album[0:36] + '...'  
-            if counter == 1:
-              counter = '👑'
-              text += f'**{counter}. [{album} ({item["year"]})]({item["spotify"]})** - nota: **{item["rating"]}**\n'                
-              counter = 1
-              counter += 1              
-            else:
-              text += f'**{counter}. [{album} ({item["year"]})]({item["spotify"]})** - nota: **{item["rating"]}**\n'
-              counter += 1                
-            if counter > 7:
-                break                                    
-        try:
-          embedVar.add_field(
-          name='\u200b',
-          value= text
-            )
-        except:
-            pass        
-        
-        await message.channel.send(embed=embedVar)
+        sorted_list = myratings_list(str(message.author), year)        
+        embedSet =  myratings_embeds(sorted_list, user, year)    
+
+        for item in embedSet:
+          await message.channel.send(embed=item)
 
 ########################################################################################
 
@@ -800,70 +773,9 @@ async def on_message(message):
             db['alltime'] = [new]
 
     if message.content.startswith('!newalbum') or message.content.startswith(
-            '!new'):
-        create_db()
-        album_novo = message.content.split(' - ')
-        artist = album_novo[1]
-        album = album_novo[2]
-        spotify = album_novo[3]
-        rym = get_rym_page(artist, album)
-        id = 0
-        try:
-            id = db['2023'][-1]['id'] + 1
-        except:
-            pass
-        # Make sure id increments through years
-        if len(db['2023']) < 1:
-            id = len(db['2022']) + 1
-        reviews = {}
-        rating = {}
-        genre = '#'
-        year = '2023'
-        country = ''
-        cover = get_album_cover(artist + ' ' + album)              
-        added_on_day = datetime.now(
-            pytz.timezone('America/Sao_Paulo')).strftime("%d/%m/%Y")
-        added_on_time = datetime.now(
-            pytz.timezone('America/Sao_Paulo')).strftime("%H:%M:%S")
-        added_by = str(message.author)
-        new = {
-            'artist': artist,
-            'album': album,
-            'spotify': spotify,
-            'id': id,
-            'reviews': reviews,
-            'rating': rating,
-            'genre': genre,
-            'year': year,
-            'country': country,
-            'rym': rym,
-            'added_on_day': added_on_day,
-            'added_on_time': added_on_time,
-            'added_by': added_by,
-            'cover': cover
-        }
-        album_list = [x['album'].lower() for x in db['2023']]
-        if db['points'][str(message.author)] > 0:
-            if '2023' in db.keys():
-                if new['album'].lower() in album_list:                    
-                    await message.channel.send(
-                        f'Não foi possível adicionar esse álbum pois ele já está na lista.'
-                    )
-                else:                    
-                    db['2023'].append(new)
-                    await message.channel.send(
-                        f'**{new["artist"]} - {new["album"]}** inserido à lista de lançamentos de 2023 com sucesso! (id: **{new["id"]})**\n{divider}adicionado em **{new["added_on_day"]}** às **{new["added_on_time"]}** por **{new["added_by"]}**'
-                    )
-                    remove_points(str(message.author))
-                    await message.channel.send(
-                        f'\n{divider}**{str(message.author)}**, seu total de pontos atualizado é **{db["points"][str(message.author)]}** ponto(s).'
-                    )
-            else:
-                db['2023'] = [new]
-        else:
-            await message.channel.send(
-                f'**{str(message.author)}**, você não tem pontos suficientes para esta operação. Total de pontos: **{db["points"][str(message.author)]}**\nPara ganhar pontos, participe do desafio do #album-challenge '
-            )
+            '!new'):        
+        embedVar = add_new_album(str(message.author), message.content)
+        await message.channel.send(embed=embedVar)           
 
     if message.content.startswith('!teste'):        
         await message.channel.send(f'bot funcionando normalmente.')

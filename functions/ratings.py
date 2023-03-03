@@ -1,8 +1,9 @@
+import discord
 from replit import db
 from functions.helpers import *
 
 
-def myratings(user, year):
+def myratings_list(user, year):
   unsorted_list = []  
   list1 = [x for x in db['2022']]
   list2 = [x for x in db['2023']]
@@ -23,7 +24,7 @@ def myratings(user, year):
             unsorted_list.append(new_entry)            
   if year == 'alltime':
     sorted_list = sorted(unsorted_list, key=lambda d: d['rating'], reverse=True)    
-    return sorted_list[0:10]
+    return sorted_list[0:20]
   else:
     year_list = [x for x in unsorted_list if x['year'] == year]
     sorted_list = sorted(year_list, key=lambda d: d['rating'], reverse=True)    
@@ -56,3 +57,92 @@ def get_rating_average(id):
       return album_rating
     except:
       return 'Ainda sem notas'
+
+
+def myratings_embeds(sorted_list, user, year):
+  for item in sorted_list:
+    print(item['artist'])
+  counter = 1                
+  embedSet = []
+  embedVar = discord.Embed(
+    title=f'Melhores avaliados por {user} ({year})', color=0x0093FF
+  )
+  text = ''        
+  embedVar.set_thumbnail(
+        url = sorted_list[0]['cover']
+      )
+  for item in sorted_list[0:7]:
+      try:
+        album = item["artist"] + ' - ' + item["album"]
+        if len(album) > 36:
+          album = album[0:36] + '...'  
+        if counter == 1:
+          counter = '👑'
+          text += f'**{counter}. [{album} ({item["year"]})]({item["spotify"]})** - nota: **{item["rating"]}**\n'                
+          counter = 1
+          counter += 1              
+        else:
+          text += f'**{counter}. [{album} ({item["year"]})]({item["spotify"]})** - nota: **{item["rating"]}**\n'
+          counter += 1                
+        # if counter > 7:
+        #     break
+      except:
+        continue
+  try:
+    embedVar.add_field(
+    name='\u200b',
+    value= text
+      )
+    embedSet.append(embedVar)
+  except:
+      pass
+  
+  if len(sorted_list) > 7:
+    embedVar2 = discord.Embed(color=0x0093FF)
+    text2 = ''
+    for item in sorted_list[7:14]:
+      try:
+        album = item["artist"] + ' - ' + item["album"]
+        if len(album) > 36:
+          album = album[0:36] + '...'       
+        text2 += f'**{counter}. [{album} ({item["year"]})]({item["spotify"]})** - nota: **{item["rating"]}**\n'
+        counter += 1                
+        # if counter > 7:
+        #     break
+      except:
+        continue
+  try:
+    embedVar2.add_field(
+    name='\u200b',
+    value= text2
+      )
+    embedSet.append(embedVar2)
+  except:
+      pass
+
+  if len(sorted_list) > 14:
+    embedVar3 = discord.Embed(color=0x0093FF)
+    text3 = ''
+    for item in sorted_list[14:20]:        
+        try:
+          album = item["artist"] + ' - ' + item["album"]
+          if len(album) > 36:
+            album = album[0:36] + '...'          
+          text3 += f'**{counter}. [{album} ({item["year"]})]({item["spotify"]})** - nota: **{item["rating"]}**\n'
+          counter += 1                
+          # if counter > 7:
+          #     break
+        except:
+          continue
+    try:
+      embedVar3.add_field(
+      name='\u200b',
+      value= text3
+        )
+      embedSet.append(embedVar3)
+    except:
+        pass
+
+  return embedSet
+  
+  
